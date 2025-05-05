@@ -4,26 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BadgeCheck, Brain, ClipboardList, Music, TimerReset, FileUp } from "lucide-react";
 import { motion } from "framer-motion";
-import { initializeApp } from "firebase/app";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 const challenges = Array.from({ length: 30 }, (_, i) => ({
   day: i + 1,
@@ -44,7 +24,7 @@ export default function BoostMyBrain() {
   const [journal, setJournal] = useState(() => localStorage.getItem('journal') || '');
   const [parentExport, setParentExport] = useState('');
 
-  const completeToday = async () => {
+  const completeToday = () => {
     if (!completedDays.includes(currentDay)) {
       const newXp = xp + 10;
       const newCompleted = [...completedDays, currentDay];
@@ -52,24 +32,13 @@ export default function BoostMyBrain() {
       setCompletedDays(newCompleted);
       localStorage.setItem('xp', newXp);
       localStorage.setItem('completedDays', JSON.stringify(newCompleted));
-      await saveToFirebase(newXp, newCompleted, journal);
     }
   };
 
-  const handleJournalChange = async (e) => {
+  const handleJournalChange = (e) => {
     const newJournal = e.target.value;
     setJournal(newJournal);
     localStorage.setItem('journal', newJournal);
-    await saveToFirebase(xp, completedDays, newJournal);
-  };
-
-  const saveToFirebase = async (xpVal, completed, journalText) => {
-    await setDoc(doc(db, "userProgress", "singleUser"), {
-      xp: xpVal,
-      completedDays: completed,
-      journal: journalText,
-      updatedAt: serverTimestamp()
-    });
   };
 
   const exportParentSummary = () => {
@@ -80,20 +49,6 @@ export default function BoostMyBrain() {
     };
     setParentExport(JSON.stringify(summary, null, 2));
   };
-
-  useEffect(() => {
-    const loadFirebaseProgress = async () => {
-      const docRef = doc(db, "userProgress", "singleUser");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setXp(data.xp || 0);
-        setCompletedDays(data.completedDays || []);
-        setJournal(data.journal || '');
-      }
-    };
-    loadFirebaseProgress();
-  }, []);
 
   const currentChallenge = challenges.find((c) => c.day === currentDay);
   const progressPercent = Math.round((completedDays.length / challenges.length) * 100);
@@ -169,7 +124,7 @@ export default function BoostMyBrain() {
               <Card className="bg-zinc-800 border border-zinc-700">
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-2 flex items-center gap-2"><Music className="text-green-400" /> Focus Playlist</h3>
-                  <iframe width="100%" height="80" src="https://www.youtube.com/embed/videoseries?list=PLVjVRY5SCa0_klxT4ttTHrp7MdzPt1AJX" title="Focus Music" allowFullScreen></iframe>
+                  <iframe width="100%" height="80" src="https://www.youtube.com/embed/videoseries?list=PLVjVRY5SCa0_klxT4ttTHrp7MdzPt1AJX" title="Focus Music" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
                 </CardContent>
               </Card>
 
@@ -191,7 +146,7 @@ export default function BoostMyBrain() {
                   <h3 className="font-semibold mb-2 flex items-center gap-2"><FileUp className="text-yellow-400" /> Parent Export</h3>
                   <Button onClick={exportParentSummary}>Export Summary</Button>
                   {parentExport && (
-                    <pre className="mt-2 text-sm bg-zinc-700 p-2 rounded overflow-x-auto">{parentExport}</pre>
+                    <pre className="mt-2 text-sm bg-zinc-700 p-2 rounded overflow-x-auto whitespace-pre-wrap break-words">{parentExport}</pre>
                   )}
                 </CardContent>
               </Card>
